@@ -348,7 +348,7 @@ function MRBP_IsQuestGarrisonRequirement(questID)
 	--
 	-- Returns: boolean
 	--
-	ns.cprint("IsQuestGarrisonRequirement?", questID);
+	_log:debug("IsQuestGarrisonRequirement?", questID);
 	local garrInfo, unlockQuestID;
 	
 	for _, garrTypeID in ipairs(MRBP_GARRISON_TYPE_INFOS_SORTORDER) do
@@ -360,7 +360,7 @@ function MRBP_IsQuestGarrisonRequirement(questID)
 		end
 	end
 	
-	ns.cprint("... no.")
+	_log:debug("... no.")
 	return false;
 end
 
