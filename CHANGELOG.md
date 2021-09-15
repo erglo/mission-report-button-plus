@@ -1,9 +1,16 @@
 Changelog
 =========
 
+v2021.09.15 (beta)
+-------------------
+- *Changed* projekt status to `beta`. __Testers wanted!__
+- *Added* version control management with Git, including meta files.
+
 v2021.09.10 (alpha)
 -------------------
 - *Added* a new file for utility functions in order to keep the core file clear.
+- *Added* slash command `show` to show the minimap button, when not displayed. (experimental)
+- *Added* requirement checks for each expansion; instead of player level check (unreliable due to level squish) the quests are used as shown in the mobile app.
 
 v2021.08.21 (alpha)
 -------------------

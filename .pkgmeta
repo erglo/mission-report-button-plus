@@ -1,0 +1,12 @@
+package-as: MissionReportButtonPlus_v2021.09.15_beta1
+
+enable-nolib-creation: no
+
+ignore:
+    - MRBP_long-description.md
+
+manual-changelog:
+    filename: CHANGELOG.md
+    markup-type: markdown
+
+license-output: LICENSE.txt
