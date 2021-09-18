@@ -42,19 +42,47 @@ local MRBP_EventMessagesCounter;
 
 local MRBP = CreateFrame("Frame", AddonID.."ListenerFrame");  --> core functions + event listener
 
+FrameUtil.RegisterFrameForEvents(MRBP, {
+	"ADDON_LOADED",
+	"PLAYER_ENTERING_WORLD",
+	"GARRISON_BUILDING_ACTIVATABLE",
+	"GARRISON_INVASION_AVAILABLE",
+	"GARRISON_MISSION_FINISHED",
+	"GARRISON_TALENT_COMPLETE",
+	"QUEST_TURNED_IN",
+	"QUEST_AUTOCOMPLETE",
+	"GARRISON_MISSION_STARTED",
+	}
+);
+
 MRBP:SetScript("OnEvent", function(self, event, ...)
 		-- print("event:", event, ...);
 		
 		if ( event == "ADDON_LOADED" ) then
-			self:UnregisterEvent("ADDON_LOADED");
-			
-			local isEvent, event, eventMsg = util:IsTodayWorldQuestDayEvent();
-			if isEvent then
-				ns.cprint(eventMsg);
+			local addOnName = ...;
+
+			if ( addOnName == AddonID ) then
+				self:OnLoad();
+				self:UnregisterEvent("ADDON_LOADED");
 			end
-			
-			self:OnLoad();
-			
+		
+		elseif ( event == "PLAYER_ENTERING_WORLD" ) then
+			local isInitialLogin, isReloadingUi = ...;
+			_log:info("isInitialLogin:", isInitialLogin, "- isReloadingUi:", isReloadingUi);
+
+			local function printDayEvent()
+				local isTodayDayEvent, dayEvent, dayEventMsg = util:IsTodayWorldQuestDayEvent();
+				if isTodayDayEvent then
+					ns.cprint(dayEventMsg);
+				end
+			end
+			if isInitialLogin then
+				C_Timer.After(4, printDayEvent);  --> TODO - Look for a more elegant way
+			end
+			if isReloadingUi then
+				printDayEvent();
+			end
+		
 		elseif ( event == "GARRISON_BUILDING_ACTIVATABLE" ) then
 			-- REF. <FrameXML/Blizzard_GarrisonUI/Blizzard_GarrisonLandingPage.lua>
 			local buildingName, garrisonType = ...;
@@ -143,7 +171,7 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 				-- util:cprintEvent(garrInfo.expansionInfo.name, eventMsg);
 			end
 			-- TODO - Count and show number of other completed talents ???
-			
+		
 		elseif (event == "QUEST_TURNED_IN" or event == "QUEST_AUTOCOMPLETE") then
 			-- REF.: <FrameXML/Blizzard_APIDocumentation/QuestLogDocumentation.lua>
 			-- QUEST_TURNED_IN		  --> questID, xpReward, moneyReward = ...;
@@ -158,18 +186,6 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 			end
 		end
 	end
-);
-
-FrameUtil.RegisterFrameForEvents(MRBP, {
-	"ADDON_LOADED",
-	"GARRISON_BUILDING_ACTIVATABLE",
-	"GARRISON_INVASION_AVAILABLE",
-	"GARRISON_MISSION_FINISHED",
-	"GARRISON_TALENT_COMPLETE",
-	"QUEST_TURNED_IN",
-	"QUEST_AUTOCOMPLETE",
-	"GARRISON_MISSION_STARTED",
-	}
 );
 
 function MRBP:OnLoad()
@@ -355,7 +371,7 @@ function MRBP_IsQuestGarrisonRequirement(questID)
 		garrInfo = MRBP_GetGarrisonData(garrTypeID);
 		unlockQuestID = garrInfo.unlockQuest[1];
 		if ( questID == unlockQuestID ) then
-			ns.cprint("... yes!")
+			_log:debug("... yes!")
 			return true;
 		end
 	end

@@ -5,6 +5,7 @@ v2021.09.15 (beta)
 -------------------
 - *Changed* projekt status to `beta`. __Testers wanted!__
 - *Added* version control management with Git, including meta files.
+- *Added* calendar world quest event week watcher.
 
 v2021.09.10 (alpha)
 -------------------

@@ -111,8 +111,8 @@ function util:cprintEvent(locationName, eventMsg, typeName, instructions, isHype
 		-- typeName = YELLOW_FONT_COLOR:WrapTextInColorCode(PARENS_TEMPLATE:format(typeName));  --> WoW global string
 		typeName = LIGHTYELLOW_FONT_COLOR:WrapTextInColorCode(typeName);
 	end
-	ns.cprint(DARKYELLOW_FONT_COLOR:WrapTextInColorCode(FROM_A_DUNGEON:format(locationName)),  --> WoW global string
-			  eventMsg, typeName and typeName or '', instructions and instructions or '');
+	cprint(DARKYELLOW_FONT_COLOR:WrapTextInColorCode(FROM_A_DUNGEON:format(locationName)),  --> WoW global string
+		   eventMsg, typeName and typeName or '', instructions and instructions or '');
 end
 
 ----- Atlas + Textures ---------------------------------------------------------
@@ -152,7 +152,7 @@ function util:CreateTextIcon(atlasNameOrTexID, size, xOffset, yOffset)
 		return CreateAtlasMarkup(atlasNameOrTexID, size, size, xOffset, yOffset);  --> keep original color
 	end
 end
--- ns.cprint(util:CreateTextIcon(136244), "Test");
+-- print(util:CreateTextIcon(136244), "Test");
 
 ----- Data handler -------------------------------------------------------------
 
@@ -179,7 +179,7 @@ function util:GetExpansionInfo(expansionLevel)
 		EXPANSION_NAME7,  --> "Battle for Azeroth"
 		EXPANSION_NAME8,  --> "Shadowlands"
 	};
-		
+	
 	if not expansionLevel then
 		_log:debug("Expansion level not given; using clamped level instead.");
 		local currentExpansionLevel = GetClampedCurrentExpansionLevel();
@@ -255,6 +255,7 @@ function util:IsTodayWorldQuestDayEvent()
 	--
 	-- REF.: <FrameXML/CalendarUtil.lua>
 	--
+	_log:info("Scanning calendar for day events...");
 	local event;
 	local eventID_WORLDQUESTS = 613;
 
@@ -265,9 +266,12 @@ function util:IsTodayWorldQuestDayEvent()
 	-- currentCalendarTime.hour = 5;
 	local monthOffset = 0;  --> this month
 	local numDayEvents = C_Calendar.GetNumDayEvents(monthOffset, currentCalendarTime.monthDay);
+	_log:info("numDayEvents:", numDayEvents);
 
 	for eventIndex = 1, numDayEvents do
 		event = C_Calendar.GetDayEvent(monthOffset, currentCalendarTime.monthDay, eventIndex);
+		-- _log:debug("eventID:", event.eventID, eventID_WORLDQUESTS, event.eventID == eventID_WORLDQUESTS);
+
 		if ( event.eventID == eventID_WORLDQUESTS ) then
 			_log:debug("Got:", event.title, event.endTime.monthDay - currentCalendarTime.monthDay, "days left");
 			
@@ -301,11 +305,12 @@ function util:IsTodayWorldQuestDayEvent()
 				eventTime = YELLOW_FONT_COLOR:WrapTextInColorCode(COMMUNITIES_CALENDAR_EVENT_FORMAT:format(COMMUNITIES_CALENDAR_TODAY, startOrEndTime));
 			end
 			eventMsg = COMMUNITIES_CALENDAR_CHAT_EVENT_BROADCAST_FORMAT:format(eventTime, eventLink, suffixString or '');
-
+			
 			return true, event, eventMsg;
 		end
 	end
 	
+	_log:debug("Wanted day event not found.")
 	return false, nil, nil;
 end
 
