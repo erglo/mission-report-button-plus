@@ -338,6 +338,8 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 	chatMsgCB.GetValue = CheckButton_GetValue;
 	chatMsgCB.SetValue = CheckButton_SetValue;
 	BlizzardOptionsPanel_RegisterControl(chatMsgCB, self);
+
+	-- TODO - Hide WoD garrison invasion badge (GarrisonLandingPage.InvasionBadge)
 	
 	--[[ Dropdown menu settings ]]--
 	
@@ -479,13 +481,13 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 		EXPANSION_NAME6,  --> "Legion"
 		EXPANSION_NAME7,  --> "Battle for Azeroth"
 		EXPANSION_NAME8,  --> "Shadowlands"
-		"[ "..SETTINGS.." ]",  --> Additional "Settings" menu entry; WoW global string			
+		"[ "..SETTINGS.." ]",  --> Additional "Settings" menu entry; WoW global string
 	};
 	--> Do NOT remove the placeholders! The position (index) of each expansion
 	--  name is equal to the expansion ID which is used in the core file. The
 	--  "Settings" entry is the extra value (latest expansion ID + 1) .
 	ns.settingsMenuEntry = tostring(#expansionNames);
-		
+	
 	local function MenuEntriesSelectionDropDown_OnClick(self)
 		--
 		-- Note: 'self' refers to the currently clicked menu entry frame.
@@ -538,6 +540,28 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 				UIDropDownMenu_AddButton(info);
 			end
 		end
+		UIDropDownMenu_AddSeparator()
+		-- TODO - Add un-/checking options
+		info.text = CHECK_ALL;  --> WoW global string
+		info.value = "all";
+		info.notCheckable = 1;
+		info.keepShownOnClick = 1;
+		info.justifyH = "CENTER";
+		info.colorCode = NORMAL_FONT_COLOR:GenerateHexColorMarkup();
+		info.func = function(self)
+			self.checked = nil;
+			-- MenuEntriesSelectionDropDown_OnClick(self)
+		end;
+		UIDropDownMenu_AddButton(info);
+		
+		info.text = UNCHECK_ALL;  --> WoW global string
+		info.func = nil;
+		info.value = "none";
+		info.notCheckable = 1;
+		info.keepShownOnClick = 1;
+		info.justifyH = "CENTER";
+		info.colorCode = NORMAL_FONT_COLOR:GenerateHexColorMarkup();
+		UIDropDownMenu_AddButton(info);
 	end
 	
 	UIDropDownMenu_SetWidth(menuEntriesDD, panelContainerWidth/3);

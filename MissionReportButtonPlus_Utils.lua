@@ -127,7 +127,7 @@ function util:GetAtlasInfo(atlas)
 	end
 end
 
-function util:CreateTextIcon(atlasNameOrTexID, size, xOffset, yOffset)
+function util:CreateInlineIcon(atlasNameOrTexID, size, xOffset, yOffset)
 	--
 	-- Return given atlas texture in string format.
 	--
@@ -152,7 +152,7 @@ function util:CreateTextIcon(atlasNameOrTexID, size, xOffset, yOffset)
 		return CreateAtlasMarkup(atlasNameOrTexID, size, size, xOffset, yOffset);  --> keep original color
 	end
 end
--- print(util:CreateTextIcon(136244), "Test");
+-- print(util:CreateInlineIcon(136244), "Test");
 
 ----- Data handler -------------------------------------------------------------
 
@@ -275,38 +275,41 @@ function util:IsTodayWorldQuestDayEvent()
 		if ( event.eventID == eventID_WORLDQUESTS ) then
 			_log:debug("Got:", event.title, event.endTime.monthDay - currentCalendarTime.monthDay, "days left");
 			
-			if ( currentCalendarTime.monthDay == event.endTime.monthDay and currentCalendarTime.hour >= event.endTime.hour ) then
+			if ( event.sequenceType == "END" and currentCalendarTime.hour >= event.endTime.hour ) then
 				-- Don't show anything on last day after event ends
 				break;
 			end
-			
+			if ( event.sequenceType == "START" and currentCalendarTime.hour >= event.endTime.hour ) then
+				-- Show as ongoing on the first day after event starts
+				event.sequenceType = "ONGOING";
+			end
+
+			local timeString, suffixString;
 			local eventLinkText = GetCalendarEventLink(monthOffset, currentCalendarTime.monthDay, eventIndex);
 			local eventLink = LINK_FONT_COLOR:WrapTextInColorCode(COMMUNITIES_CALENDAR_CHAT_EVENT_TITLE_FORMAT:format(eventLinkText));
-			local ongoing = ((currentCalendarTime.monthDay == event.startTime.monthDay and currentCalendarTime.hour >= event.startTime.hour) or
-							 (currentCalendarTime.monthDay > event.startTime.monthDay and currentCalendarTime.monthDay < event.endTime.monthDay));
-			local eventTime, suffixString, eventMsg;
-			if ongoing then
-				-- Show between the first and the last day
-				eventTime = YELLOW_FONT_COLOR:WrapTextInColorCode(COMMUNITIES_CALENDAR_ONGOING_EVENT_PREFIX);
+			
+			if ( event.sequenceType == "ONGOING" ) then
+				-- Show on days between the first and the last day
+				timeString = COMMUNITIES_CALENDAR_ONGOING_EVENT_PREFIX;
 				-- Also show roughly the remaining time for the ongoing event
 				local timeLeft = event.endTime.monthDay - currentCalendarTime.monthDay;
 				suffixString = SPELL_TIME_REMAINING_DAYS:format(timeLeft);
 			else
 				-- Show on first and last day of the event
-				local startOrEndTime;
-				if ( currentCalendarTime.monthDay == event.startTime.monthDay ) then
-					startOrEndTime = GameTime_GetFormattedTime(event.startTime.hour, event.startTime.minute, true);
-					eventLink = CALENDAR_EVENTNAME_FORMAT_START:format(eventLink);
+				if ( event.sequenceType == "START" ) then
+					timeString = GameTime_GetFormattedTime(event.startTime.hour, event.startTime.minute, true);
 				end
-				if ( currentCalendarTime.monthDay == event.endTime.monthDay ) then
-					startOrEndTime = GameTime_GetFormattedTime(event.endTime.hour, event.endTime.minute, true);
-					eventLink = CALENDAR_EVENTNAME_FORMAT_END:format(eventLink);
+				if ( event.sequenceType == "END" ) then
+					timeString = GameTime_GetFormattedTime(event.endTime.hour, event.endTime.minute, true);
+					
 				end
-				eventTime = YELLOW_FONT_COLOR:WrapTextInColorCode(COMMUNITIES_CALENDAR_EVENT_FORMAT:format(COMMUNITIES_CALENDAR_TODAY, startOrEndTime));
+				-- Add localized text whether the today's event starts or ends
+				eventLink = _G["CALENDAR_EVENTNAME_FORMAT_"..event.sequenceType]:format(eventLink);
+				timeString = COMMUNITIES_CALENDAR_EVENT_FORMAT:format(COMMUNITIES_CALENDAR_TODAY, timeString);
 			end
-			eventMsg = COMMUNITIES_CALENDAR_CHAT_EVENT_BROADCAST_FORMAT:format(eventTime, eventLink, suffixString or '');
+			local chatMsg = YELLOW_FONT_COLOR:WrapTextInColorCode(COMMUNITIES_CALENDAR_CHAT_EVENT_BROADCAST_FORMAT:format(timeString, eventLink, suffixString or ''));
 			
-			return true, event, eventMsg;
+			return true, event, chatMsg;
 		end
 	end
 	

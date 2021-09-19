@@ -66,23 +66,6 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 				self:UnregisterEvent("ADDON_LOADED");
 			end
 		
-		elseif ( event == "PLAYER_ENTERING_WORLD" ) then
-			local isInitialLogin, isReloadingUi = ...;
-			_log:info("isInitialLogin:", isInitialLogin, "- isReloadingUi:", isReloadingUi);
-
-			local function printDayEvent()
-				local isTodayDayEvent, dayEvent, dayEventMsg = util:IsTodayWorldQuestDayEvent();
-				if isTodayDayEvent then
-					ns.cprint(dayEventMsg);
-				end
-			end
-			if isInitialLogin then
-				C_Timer.After(4, printDayEvent);  --> TODO - Look for a more elegant way
-			end
-			if isReloadingUi then
-				printDayEvent();
-			end
-		
 		elseif ( event == "GARRISON_BUILDING_ACTIVATABLE" ) then
 			-- REF. <FrameXML/Blizzard_GarrisonUI/Blizzard_GarrisonLandingPage.lua>
 			local buildingName, garrisonType = ...;
@@ -108,7 +91,7 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 				local name, texture, shipmentCapacity = C_Garrison.GetLandingPageShipmentInfo(buildingID);
 				if ( name == buildingName ) then
 					-- Add icon to building name
-					buildingName = util:CreateTextIcon(texture).." "..buildingName;
+					buildingName = util:CreateInlineIcon(texture).." "..buildingName;
 					if ( MRBP_EventMessagesCounter[event][garrisonType][buildingID] == nil ) then
 						MRBP_EventMessagesCounter[event][garrisonType][buildingID] = false;
 					end
@@ -137,12 +120,12 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 			local garrTypeID = GarrisonFollowerOptions[followerTypeID].garrisonType;
 			local garrInfo = MRBP_GetGarrisonData(garrTypeID);
 			local missionInfo = C_Garrison.GetBasicMissionInfo(missionID);
-			local missionName = util:CreateTextIcon(missionInfo.typeAtlas).." "..missionInfo.name;
+			local missionName = util:CreateInlineIcon(missionInfo.typeAtlas).." "..missionInfo.name;
 			_log:debug(event, "followerTypeID:", followerTypeID, "missionID:", missionID, missionInfo.name);
-			if ( followerTypeID == Enum.GarrisonFollowerType.FollowerType_6_2 ) then
-				-- Distinguish shipyard missions from the others
-				missionName = missionName.." "..PARENS_TEMPLATE:format(missionInfo.type);
-			end
+			-- if ( followerTypeID == Enum.GarrisonFollowerType.FollowerType_6_2 ) then
+			-- 	-- Distinguish shipyard missions from the others
+			-- 	missionName = missionName.." "..PARENS_TEMPLATE:format(missionInfo.type);
+			-- end
 			util:cprintEvent(garrInfo.expansionInfo.name, eventMsg, missionName);  -- , instructionMsg);
 			-- TODO - Count and show number of other finished missions ???
 			-- TODO - Remove from MRBP_GlobalMissions
@@ -162,7 +145,7 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 					for talentIndex, talent in ipairs(treeInfo.talents) do
 						if ( talent.isBeingResearched or talent.id == completeTalentID ) then
 							-- SetupShipment(shipment, talent.icon, true, talent.name, nil, nil, nil, talent.isBeingResearched and 0 or 1, 1, talent.startTime, talent.researchDuration, SHIPMENT_TYPE_TALENT, shipmentIndex);
-							local nameString = util:CreateTextIcon(talent.icon).." "..talent.name;
+							local nameString = util:CreateInlineIcon(talent.icon).." "..talent.name;
 							util:cprintEvent(garrInfo.expansionInfo.name, eventMsg, nameString); -- [Aus den Trümmern]
 						end
 					end
@@ -184,6 +167,31 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 				_log:info("Required quest completed!", questID, questName);
 				-- TODO - Add 'is unlocked/complete' info to data table
 			end
+		
+		elseif ( event == "PLAYER_ENTERING_WORLD" ) then
+			local isInitialLogin, isReloadingUi = ...;
+			_log:info("isInitialLogin:", isInitialLogin, "- isReloadingUi:", isReloadingUi);
+
+			local function printDayEvent()
+				local isTodayDayEvent, dayEvent, dayEventMsg = util:IsTodayWorldQuestDayEvent();
+				if isTodayDayEvent then
+					ns.cprint(dayEventMsg);
+				end
+			end
+			if isInitialLogin then
+				local loaded, finished = IsAddOnLoaded("Blizzard_Calendar");
+				if not ( loaded ) then
+					_log:debug("Loading Blizzard_Calendar");
+					local isLoaded, failedReason = LoadAddOn("Blizzard_Calendar");
+					if failedReason then
+						ns.cprint(string.format(ADDON_LOAD_FAILED, "Blizzard_Calendar", _G["ADDON_"..failedReason]));
+					end
+				end
+				C_Timer.After(3, printDayEvent);
+			end
+			if isReloadingUi then
+				printDayEvent();
+			end
 		end
 	end
 );
@@ -194,7 +202,7 @@ function MRBP:OnLoad()
 	--
 	_log:info(string.format("Loading %s...", ns.AddonColor:WrapTextInColorCode(ns.AddonTitle)));
 	
-	-- LoadSettings();
+	-- Load settings and interface options
 	MRBP_InterfaceOptionsPanel:Initialize();
 
 	self:RegisterSlashCommands();
@@ -651,7 +659,7 @@ function MRBP_OnEnter(self)
 	local currentDateTime = C_DateAndTime.GetCurrentCalendarTime();
 	if ( currentDateTime.month == 12 ) then
 		-- Show a Xmas easter egg on december after the minimap tooltip text
-		tooltipAddonText = tooltipAddonText.." "..util:CreateTextIcon("Front-Tree-Icon");
+		tooltipAddonText = tooltipAddonText.." "..util:CreateInlineIcon("Front-Tree-Icon");
 	end
 	GameTooltip_AddNormalLine(GameTooltip, tooltipAddonText);
 	GameTooltip:Show();
