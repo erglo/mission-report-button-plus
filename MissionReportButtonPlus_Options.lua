@@ -124,8 +124,8 @@ local function CheckButton_SetValue(control, value, isRefreshing)
 		end
 	end
 	
-	ns.settings[control.varname] = booleanValue; --> for user preview only; this
-	--> will be undone, if user clicks "Cancel".
+	ns.settings[control.varname] = booleanValue;
+	--> for user preview only; this will be undone, when user clicks "Cancel".
 end
 
 local function CheckButton_GetValue(control)
@@ -164,7 +164,6 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 			
 			for i, control in ipairs(self.controls) do
 				if ( control.newValue ) then
-					-- ns.settings[control.varname] = control.newValue;
 					control.value = control.newValue;
 					control.newValue = nil;
 					_log:debug(i, "Ok:", control:GetValue(), control.newValue);
@@ -181,7 +180,7 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 			
 			for i, control in ipairs(self.controls) do
 				if ( control.newValue ) then
-					-- ns.settings[control.varname] = control.value;  --> previous value
+					ns.settings[control.varname] = control.value;  --> previous value
 					control.newValue = nil;
 					_log:debug(i, "N-Ok:", control:GetValue(), control.newValue);
 				end
@@ -206,14 +205,12 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 			-- Use this to refresh your panel's UI in case settings were changed without player interaction.
 			_log:info("Refreshing options...", #self.controls);
 			
-			local currentValue;
 			local isRefreshing = true;
 			for i, control in ipairs(self.controls) do
 				if ( control.type == CONTROLTYPE_CHECKBOX ) then
-					-- currentValue = ns.settings[control.varname] == true and "1" or "0";
-					currentValue = control.value;
-					_log:debug(i, control.varname, ns.settings[control.varname], currentValue);
-					control:SetValue(currentValue, isRefreshing);
+					control.value = ns.settings[control.varname];
+					control:SetValue(control.value, isRefreshing);
+					_log:debug(i, control.varname, ns.settings[control.varname], control.value);
 					if control.dependentControls then
 						-- BlizzardOptionsPanel_SetDependentControlsEnabled(control, control:GetChecked());
 						for _, subcontrol in ipairs(control.dependentControls) do

@@ -97,7 +97,7 @@ function util:printVersion(shortVersionOnly)
 		local notes_enUS = GetAddOnMetadata(AddonID, "Notes");
 		local notes_local = GetAddOnMetadata(AddonID, "Notes-"..GetLocale());
 		local notes = notes_local or notes_enUS;
-		local output = title..'|nv'..version..' by '..author..'|n'..notes;
+		local output = title..'|n'..version..' by '..author..'|n'..notes;
 		print(ns.AddonColor:WrapTextInColorCode(output));
 	end
 end
@@ -186,18 +186,18 @@ function util:GetExpansionInfo(expansionLevel)
 		expansionLevel = currentExpansionLevel;
 	end
 	
-	local expansionDisplayInfo = GetExpansionDisplayInfo(expansionLevel);
-	if expansionDisplayInfo then
-		expansionInfo.logo = expansionDisplayInfo.logo;
-		expansionInfo.banner = expansionDisplayInfo.banner;
-	end
+	-- local expansionDisplayInfo = GetExpansionDisplayInfo(expansionLevel);
+	-- if expansionDisplayInfo then
+	-- 	expansionInfo.logo = expansionDisplayInfo.logo;
+	-- 	expansionInfo.banner = expansionDisplayInfo.banner;
+	-- end
 	
 	expansionInfo.expansionLevel = expansionLevel;
 	expansionInfo.name = expansionNames[expansionLevel];
 	expansionInfo.maxLevel = GetMaxLevelForExpansionLevel(expansionLevel);
-	expansionInfo.minLevel = GetMaxLevelForExpansionLevel(expansionLevel-1);
+	expansionInfo.minLevel = GetMaxLevelForExpansionLevel(expansionLevel-1);  --> TODO - needed ???
 	
-	_log:debug("expansionInfo:", expansionInfo.name, expansionInfo.expansionLevel,  expansionInfo.minLevel, "-", expansionInfo.maxLevel);
+	-- _log:debug("expansionInfo:", expansionInfo.name, expansionInfo.expansionLevel,  expansionInfo.minLevel, "-", expansionInfo.maxLevel);
 	
 	return expansionInfo;
 end

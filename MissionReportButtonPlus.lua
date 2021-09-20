@@ -122,10 +122,6 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 			local missionInfo = C_Garrison.GetBasicMissionInfo(missionID);
 			local missionName = util:CreateInlineIcon(missionInfo.typeAtlas).." "..missionInfo.name;
 			_log:debug(event, "followerTypeID:", followerTypeID, "missionID:", missionID, missionInfo.name);
-			-- if ( followerTypeID == Enum.GarrisonFollowerType.FollowerType_6_2 ) then
-			-- 	-- Distinguish shipyard missions from the others
-			-- 	missionName = missionName.." "..PARENS_TEMPLATE:format(missionInfo.type);
-			-- end
 			util:cprintEvent(garrInfo.expansionInfo.name, eventMsg, missionName);  -- , instructionMsg);
 			-- TODO - Count and show number of other finished missions ???
 			-- TODO - Remove from MRBP_GlobalMissions
@@ -150,16 +146,11 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 						end
 					end
 				end
-			-- elseif (doAlert) then
-				-- util:cprintEvent(garrInfo.expansionInfo.name, eventMsg);
 			end
 			-- TODO - Count and show number of other completed talents ???
 		
 		elseif (event == "QUEST_TURNED_IN" or event == "QUEST_AUTOCOMPLETE") then
 			-- REF.: <FrameXML/Blizzard_APIDocumentation/QuestLogDocumentation.lua>
-			-- QUEST_TURNED_IN		  --> questID, xpReward, moneyReward = ...;
-			-- QUEST_AUTOCOMPLETE	  --> questID = ...;
-			-- local questID = ...;
 			local questID = ...;
 			local questName = QuestUtils_GetQuestName(questID) or C_QuestLog.GetTitleForQuestID(questID);
 			_log:debug(event, questID, questName);
@@ -184,10 +175,10 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 					_log:debug("Loading Blizzard_Calendar");
 					local isLoaded, failedReason = LoadAddOn("Blizzard_Calendar");
 					if failedReason then
-						ns.cprint(string.format(ADDON_LOAD_FAILED, "Blizzard_Calendar", _G["ADDON_"..failedReason]));
+						_log:debug(string.format(ADDON_LOAD_FAILED, "Blizzard_Calendar", _G["ADDON_"..failedReason]));
 					end
 				end
-				C_Timer.After(3, printDayEvent);
+				C_Timer.After(5, printDayEvent);  -- FIXME - Still not working on first account-login :(
 			end
 			if isReloadingUi then
 				printDayEvent();
@@ -286,7 +277,7 @@ function MRBP:LoadData()
 			["description"] = MINIMAP_GARRISON_LANDING_PAGE_TOOLTIP,
 			["minimapIcon"] = string.format("GarrLanding-MinimapIcon-%s-Up", factionGroup),
 			-- ["atlas"] = "accountupgradebanner-wod",
-			["msg"] = {
+			["msg"] = {  --> menu entry tooltip messages
 				["missionsTitle"] = GARRISON_MISSIONS_TITLE,
 				["missionsReadyCount"] = GARRISON_LANDING_COMPLETED,  --> "%d/%d Ready for pickup"
 				["missionsEmptyProgress"] = GARRISON_EMPTY_IN_PROGRESS_LIST,
@@ -516,8 +507,6 @@ function MRBP:GarrisonLandingPageDropDown_Initialize(level)
 		_log:debug("Showing initial display order.");
 	end
 	
-	local playerLevel = UnitLevel("player");
-	local expansionForPlayerLevel = GetExpansionForLevel(playerLevel);
 	local playerMaxLevelForExpansion = GetMaxLevelForPlayerExpansion();
 	local shouldShowDisabled, playerOwnsExpansion, isActiveEntry;
 	
@@ -527,9 +516,6 @@ function MRBP:GarrisonLandingPageDropDown_Initialize(level)
 			filename, width, height, txLeft, txRight, txTop, txBottom = util:GetAtlasInfo(garrInfo.minimapIcon);
 		end
 		shouldShowDisabled = not MRBP_IsGarrisonRequirementMet(garrTypeID);
-		-- shouldShowDisabled = (not C_Garrison.HasGarrison(garrTypeID) or
-							  -- playerLevel < garrInfo.expansionInfo.maxLevel or
-							  -- expansionForPlayerLevel < garrInfo.expansionInfo.expansionLevel);
 		playerOwnsExpansion = garrInfo.expansionInfo.maxLevel <= playerMaxLevelForExpansion;  --> eligibility check
 		isActiveEntry = tContains(ns.settings.activeMenuEntries, tostring(garrInfo.expansionInfo.expansionLevel));  --> user option
 		
@@ -600,7 +586,7 @@ function MRBP:GarrisonLandingPageDropDown_Initialize(level)
 			info.tCoordBottom = txBottom;
 		end
 		info.func = function(self)
-			-- Only works correctly, if you call this twice (!)
+			-- Works only then correctly, when you call this twice (!)
 			InterfaceOptionsFrame_OpenToCategory(MRBP_InterfaceOptionsPanel);
 			InterfaceOptionsFrame_OpenToCategory(MRBP_InterfaceOptionsPanel);
 		end;
@@ -716,15 +702,17 @@ ns.MRBP_ReloadDropdown = MRBP_ReloadDropdown;
 local SLASH_CMD_ARGLIST = {
 	-- arg, desc, key,
 	{"version", L.SLASHCMD_DESC_VERSION},
-	{"help", L.SLASHCMD_DESC_HELP},
-	{"reset", L.SLASHCMD_DESC_RESET},
-	{"chatmsg", L.SLASHCMD_DESC_CHATMSG, "showChatNotifications"},
-	{"tooltipborder", L.SLASHCMD_DESC_TOOLTIPBORDER, "menuStyleID"},
-	{"addonname", L.SLASHCMD_DESC_ADDONNAME, "showAddonNameInTooltip"},
-	{"missionhints", L.SLASHCMD_DESC_MISSIONHINTS, "showMissionCompletedHint"},
-	{"missioncount", L.SLASHCMD_DESC_MISSIONCOUNT, "showMissionCountInTooltip"},
-	{"names", L.SLASHCMD_DESC_NAMES, "preferExpansionName"},
-	{"namesorder", L.SLASHCMD_DESC_NAMESORDER, "reverseSortorder"},
+	{"chatmsg", L.SLASHCMD_DESC_CHATMSG},
+	-- {"show", "Blendet den Missionsbericht-Button der Minimap ein."},
+	{"config", BASIC_OPTIONS_TOOLTIP},  --> WoW global string
+	-- {"help", L.SLASHCMD_DESC_HELP},
+	-- {"reset", L.SLASHCMD_DESC_RESET},
+	-- {"tooltipborder", L.SLASHCMD_DESC_TOOLTIPBORDER, "menuStyleID"},
+	-- {"addonname", L.SLASHCMD_DESC_ADDONNAME, "showAddonNameInTooltip"},
+	-- {"missionhints", L.SLASHCMD_DESC_MISSIONHINTS, "showMissionCompletedHint"},
+	-- {"missioncount", L.SLASHCMD_DESC_MISSIONCOUNT, "showMissionCountInTooltip"},
+	-- {"names", L.SLASHCMD_DESC_NAMES, "preferExpansionName"},
+	-- {"namesorder", L.SLASHCMD_DESC_NAMESORDER, "reverseSortorder"},
 };
 
 -- CHAT_HELP_TEXT_LINE1 = "Chat-Befehle:";
@@ -745,21 +733,34 @@ function MRBP:RegisterSlashCommands()
 				local shortVersionOnly = true;
 				util:printVersion(shortVersionOnly);
 			
-			elseif (msg == 'help') then
-				util:printVersion();
-				print(YELLOW_FONT_COLOR:WrapTextInColorCode(L.CHATMSG_SYNTAX_INFO_S:format(SLASH_MRBP1)).."|n");
-				local name, desc;
-				for _, info in pairs(SLASH_CMD_ARGLIST) do
-					name, desc = info[1], info[2];
-					print("   "..YELLOW_FONT_COLOR:WrapTextInColorCode(name)..": "..desc);
+			elseif (msg == 'chatmsg') then
+				local enabled = ns.settings.showChatNotifications;
+				if ( enabled == false ) then
+					_log.level = _log.USER;
+					ns.cprint(L.CHATMSG_VERBOSE_S:format(SLASH_MRBP1.." "..SLASH_CMD_ARGLIST[2][1]));
+				else
+					ns.cprint(L.CHATMSG_SILENT_S:format(SLASH_MRBP1.." "..SLASH_CMD_ARGLIST[2][1]));
+					_log.level = _log.NOTSET;
 				end
+				ns.settings.showChatNotifications = not enabled;
+				ns.cprint("enabled:", enabled, ns.settings.showChatNotifications);
+			
+			elseif (msg == 'config') then
+				-- Works only then correctly, when you call this twice (!)
+				InterfaceOptionsFrame_OpenToCategory(MRBP_InterfaceOptionsPanel);
+				InterfaceOptionsFrame_OpenToCategory(MRBP_InterfaceOptionsPanel);
 			
 			elseif (msg == 'show') then
-				GarrisonLandingPageMinimapButton:Show()
-				-- if ( C_Garrison.GetLandingPageGarrisonType() == Enum.GarrisonType.Type_9_0 ) then
-				GarrisonLandingPageMinimapButton_UpdateIcon(GarrisonLandingPageMinimapButton)
-				-- end
+				ns.cprint("IsShown:", GarrisonLandingPageMinimapButton:IsShown());
+				ns.cprint("IsVisible:", GarrisonLandingPageMinimapButton:IsVisible());
+				if ( not GarrisonLandingPageMinimapButton:IsShown() ) then
+					GarrisonLandingPageMinimapButton:Show()
+					-- if ( C_Garrison.GetLandingPageGarrisonType() == Enum.GarrisonType.Type_9_0 ) then
+					GarrisonLandingPageMinimapButton_UpdateIcon(GarrisonLandingPageMinimapButton);
+					-- end
+				end
 			
+			-- Tests
 			elseif (msg == 'garrtest') then
 				local prev_loglvl = _log.level;
 				_log.level = _log.DEBUG;
@@ -768,62 +769,34 @@ function MRBP:RegisterSlashCommands()
 				for i, garrTypeID in ipairs(MRBP_GARRISON_TYPE_INFOS_SORTORDER) do
 					local garrInfo = MRBP_GetGarrisonData(garrTypeID);
 				   _log:debug("HasGarrison:", C_Garrison.HasGarrison(garrTypeID),
-							  "- GarrisonType:", garrTypeID,
+							  "- type:", string.format("%-3d", garrTypeID),
 							  "-", garrInfo.expansionInfo.name);
-					-- C_Garrison.HasGarrison(Enum.GarrisonType.Type_9_0)
 				end
 				
 				local playerLevel = UnitLevel("player");
-				local expansionForPlayerLevel = GetExpansionForLevel(playerLevel);
+				local expansionLevelForPlayer = GetExpansionForLevel(playerLevel);
 				local playerMaxLevelForExpansion = GetMaxLevelForPlayerExpansion();
+				local expansionInfo = util:GetExpansionInfo(expansionLevelForPlayer);
 				
+				_log:debug("expansionLevelForPlayer:", expansionLevelForPlayer, "-", expansionInfo.name);
 				_log:debug("playerLevel:", playerLevel);
-				_log:debug("expansionForPlayerLevel:", expansionForPlayerLevel);
 				_log:debug("playerMaxLevelForExpansion:", playerMaxLevelForExpansion);
 				
 				_log.level = prev_loglvl;
-				
-			elseif (msg == 'reset') then
-				ns.settings = CopyTable(ns.defaultSettings);
-				-- Reloading the dropdown menu
-				MRBP.dropdown = nil;
-				MRBP:GarrisonLandingPageDropDown_OnLoad();
-				ns.cprint(L.CHATMSG_RESET);
-			
-			else
-				-- Change (toggle) user settings only if different from default
-				for _, arglist in ipairs(SLASH_CMD_ARGLIST) do
-					local arg, desc, key = unpack(arglist);
-					if (key and msg == arg) then
-						_log:debug("Got:", key, "-", ns.defaultSettings[key], ns.settings[key]);
-						local defaultValue = ns.defaultSettings[key];
-						local currentValue = ns.settings[key];
-						if (currentValue ~= defaultValue) then
-							ns.settings[key] = defaultValue;
-							if (msg == 'chatmsg') then
-								_log.level = _log.USER;
-								ns.cprint(L.CHATMSG_VERBOSE_S:format(SLASH_MRBP1.." "..SLASH_CMD_ARGLIST[4][1]));
-							end
-						else
-							ns.settings[key] = not defaultValue;
-							if (msg == 'chatmsg') then
-								ns.cprint(L.CHATMSG_SILENT_S:format(SLASH_MRBP1.." "..SLASH_CMD_ARGLIST[4][1]));
-								_log.level = _log.NOTSET;
-							end
-						end
-						_log:debug("New:", "-", ns.defaultSettings[key], ns.settings[key]);
-						ns.cprint(arg, "-", ns.settings[key] and VIDEO_OPTIONS_ENABLED or VIDEO_OPTIONS_DISABLED);
-						if (msg == 'tooltipborder') then
-							MRBP_ReloadDropdown();
-						end
-					end
-				end				
 			end
 		else
+			-- Print this to chat even if the notifications are disabled
 			local prev_loglvl = _log.level;
 			_log.level = _log.USER;
+
 			util:printVersion();
-			ns.cprint(L.SLASHCMD_MSG_TYPE_HELP_S:format(YELLOW_FONT_COLOR:WrapTextInColorCode(SLASH_MRBP1.." "..SLASH_CMD_ARGLIST[2][1])));
+			ns.cprint(YELLOW_FONT_COLOR:WrapTextInColorCode(L.CHATMSG_SYNTAX_INFO_S:format(SLASH_MRBP1)).."|n");
+			local name, desc;
+			for _, info in pairs(SLASH_CMD_ARGLIST) do
+				name, desc = unpack(info);
+				print("   "..YELLOW_FONT_COLOR:WrapTextInColorCode(name)..": "..desc);
+			end
+			
 			_log.level = prev_loglvl;
 		end
 	end;
