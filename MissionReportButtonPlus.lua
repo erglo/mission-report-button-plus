@@ -27,6 +27,7 @@
 -- REF.: <FrameXML/SharedColorConstants.lua>
 -- REF.: <FrameXML/Blizzard_APIDocumentation/CovenantSanctumDocumentation.lua>
 -- REF.: <FrameXML/Blizzard_GarrisonTemplates/Blizzard_GarrisonMissionTemplates.lua>
+-- REF.: <FrameXML/Blizzard_APIDocumentation/QuestLogDocumentation.lua>
 -- (see also the function comments section for more reference)
 --
 --------------------------------------------------------------------------------
@@ -36,6 +37,7 @@ local L = ns.L;
 local _log = ns.dbg_logger;
 local util = ns.utilities;
 
+local MRBP_GARRISON_TYPE_INFOS = {};
 local MRBP_EventMessagesCounter;
 
 ----- Main ---------------------------------------------------------------------
@@ -49,14 +51,14 @@ FrameUtil.RegisterFrameForEvents(MRBP, {
 	"GARRISON_INVASION_AVAILABLE",
 	"GARRISON_MISSION_FINISHED",
 	"GARRISON_TALENT_COMPLETE",
+	-- "GARRISON_MISSION_STARTED",  --> TODO
 	"QUEST_TURNED_IN",
 	"QUEST_AUTOCOMPLETE",
-	"GARRISON_MISSION_STARTED",
+	"COVENANT_CALLINGS_UPDATED",
 	}
 );
 
 MRBP:SetScript("OnEvent", function(self, event, ...)
-		-- print("event:", event, ...);
 		
 		if ( event == "ADDON_LOADED" ) then
 			local addOnName = ...;
@@ -120,11 +122,13 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 			local garrTypeID = GarrisonFollowerOptions[followerTypeID].garrisonType;
 			local garrInfo = MRBP_GetGarrisonData(garrTypeID);
 			local missionInfo = C_Garrison.GetBasicMissionInfo(missionID);
-			local missionName = util:CreateInlineIcon(missionInfo.typeAtlas).." "..missionInfo.name;
+			local missionLink = C_Garrison.GetMissionLink(missionID);
+			local missionIcon = missionInfo.typeTextureKit and missionInfo.typeTextureKit.."-Map" or missionInfo.typeAtlas;
+			local missionName = util:CreateInlineIcon(missionIcon).." "..missionLink;
 			_log:debug(event, "followerTypeID:", followerTypeID, "missionID:", missionID, missionInfo.name);
-			util:cprintEvent(garrInfo.expansionInfo.name, eventMsg, missionName);  -- , instructionMsg);
 			-- TODO - Count and show number of other finished missions ???
 			-- TODO - Remove from MRBP_GlobalMissions
+			util:cprintEvent(garrInfo.expansionInfo.name, eventMsg, missionName, nil, true);
 		
 		elseif (event == "GARRISON_TALENT_COMPLETE") then
 			local garrTypeID, doAlert = ...;
@@ -139,10 +143,10 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 				for treeIndex, treeID in ipairs(talentTreeIDs) do
 					local treeInfo = C_Garrison.GetTalentTreeInfo(treeID);
 					for talentIndex, talent in ipairs(treeInfo.talents) do
-						if ( talent.isBeingResearched or talent.id == completeTalentID ) then
-							-- SetupShipment(shipment, talent.icon, true, talent.name, nil, nil, nil, talent.isBeingResearched and 0 or 1, 1, talent.startTime, talent.researchDuration, SHIPMENT_TYPE_TALENT, shipmentIndex);
+						if ( talent.researched or talent.id == completeTalentID ) then
+							-- GetTalentLink(talent.id);
 							local nameString = util:CreateInlineIcon(talent.icon).." "..talent.name;
-							util:cprintEvent(garrInfo.expansionInfo.name, eventMsg, nameString); -- [Aus den Trümmern]
+							util:cprintEvent(garrInfo.expansionInfo.name, eventMsg, nameString);
 						end
 					end
 				end
@@ -151,14 +155,31 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 		
 		elseif (event == "QUEST_TURNED_IN" or event == "QUEST_AUTOCOMPLETE") then
 			-- REF.: <FrameXML/Blizzard_APIDocumentation/QuestLogDocumentation.lua>
+			-- REF.: <FrameXML/QuestUtils.lua>
 			local questID = ...;
-			local questName = QuestUtils_GetQuestName(questID) or C_QuestLog.GetTitleForQuestID(questID);
+			local questName = QuestUtils_GetQuestName(questID);
 			_log:debug(event, questID, questName);
 			if MRBP_IsQuestGarrisonRequirement(questID) then
 				_log:info("Required quest completed!", questID, questName);
 				-- TODO - Add 'is unlocked/complete' info to data table
 			end
+			-- REF.: <FrameXML/ObjectAPI/CovenantCalling.lua>
+			local callingsUnlocked = C_CovenantCallings.AreCallingsUnlocked();
+			if( callingsUnlocked and C_QuestLog.IsQuestCalling(questID) ) then
+				-- self:Request();
+			end
 		
+		elseif (event == "COVENANT_CALLINGS_UPDATED") then
+			-- Updates the Shadowlands "bounty board" infos.
+			-- REF.: <FrameXML/ObjectAPI/CovenantCalling.lua>
+			-- REF.: <FrameXML/Blizzard_APIDocumentation/CovenantCallingsConstantsDocumentation.lua>
+			-- REF.: <FrameXML/Blizzard_APIDocumentation/CovenantCallingsDocumentation.lua>
+			--> updates on opening the world map in Shadowlands.
+			local callings = ...;
+			_log:debug("Covenant callings received:", #callings);
+
+			MRBP_GARRISON_TYPE_INFOS[Enum.GarrisonType.Type_9_0].bountyBoard.bounties = callings;
+				
 		elseif ( event == "PLAYER_ENTERING_WORLD" ) then
 			local isInitialLogin, isReloadingUi = ...;
 			_log:info("isInitialLogin:", isInitialLogin, "- isReloadingUi:", isReloadingUi);
@@ -208,8 +229,6 @@ end
 
 -----[[ Data ]]-----------------------------------------------------------------
 
-local MRBP_GARRISON_TYPE_INFOS = {};
-
 local MRBP_GARRISON_TYPE_INFOS_SORTORDER = {
 	Enum.GarrisonType.Type_9_0,
 	Enum.GarrisonType.Type_8_0,
@@ -251,7 +270,22 @@ local MRBP_COMMAND_TABLE_UNLOCK_QUESTS = {
 		[Enum.CovenantType.Necrolord] = {57878, "Choosing Your Purpose"},
 		["reqLevel"] = 60,	--> Source: WoW (2021-09)
 	},
-}
+};
+
+-- MRBP_BOUNTY_BOARD_MESSAGES = {
+-- 	["default"] = {  --> WoW global strings; since Legion (WoW 7.x) only
+-- 		["title"] = BOUNTY_BOARD_LOCKED_TITLE,
+-- 		["day3"] = BOUNTY_BOARD_NO_BOUNTIES_DAYS_1,
+-- 		["day2"] = BOUNTY_BOARD_NO_BOUNTIES_DAYS_2,
+-- 		["day1"] = BOUNTY_BOARD_NO_BOUNTIES_DAYS_3,
+-- 	},
+-- 	[Enum.GarrisonType.Type_9_0] = {  --> WoW global strings
+-- 		["title"] = CALLINGS_QUESTS,
+-- 		["day3"] = BOUNTY_BOARD_NO_CALLINGS_DAYS_1,
+-- 		["day2"] = BOUNTY_BOARD_NO_CALLINGS_DAYS_2,
+-- 		["day1"] = BOUNTY_BOARD_NO_CALLINGS_DAYS_3,
+-- 	},
+-- };
 
 function MRBP:LoadData()
 	--
@@ -287,6 +321,7 @@ function MRBP:LoadData()
 			["expansionInfo"] = util:GetExpansionInfo(5),
 			["continents"] = {572},  --> Draenor
 			["unlockQuest"] = MRBP_COMMAND_TABLE_UNLOCK_QUESTS[Enum.GarrisonType.Type_6_0][factionGroup],
+			-- No bounties in Draenor; only since Legion.
 		},
 		-----[[ Legion ]]-----
 		[Enum.GarrisonType.Type_7_0] = {
@@ -305,6 +340,12 @@ function MRBP:LoadData()
 			["expansionInfo"] = util:GetExpansionInfo(6),
 			["continents"] = {619, 905},  --> Broken Isles + Argus
 			["unlockQuest"] = MRBP_COMMAND_TABLE_UNLOCK_QUESTS[Enum.GarrisonType.Type_7_0][className],
+			["bountyBoard"] = {
+				["title"] = BOUNTY_BOARD_LOCKED_TITLE,
+				["noBountiesMessage"] = BOUNTY_BOARD_NO_BOUNTIES_DAYS_1,
+				["bounties"] = C_QuestLog.GetBountiesForMapID(650),  --> any child zone from "continents" seems to work.
+				["areBountiesUnlocked"] = MapUtil.MapHasUnlockedBounties(650),
+			},
 		},
 		-----[[ Battle for Azeroth ]]-----
 		[Enum.GarrisonType.Type_8_0] = {
@@ -320,8 +361,14 @@ function MRBP:LoadData()
 				["missionsComplete"] = GarrisonFollowerOptions[Enum.GarrisonFollowerType.FollowerType_8_0].strings.LANDING_COMPLETE,
 			},
 			["expansionInfo"] = util:GetExpansionInfo(7),
-			["continents"] = {876, 875, 1355},  --> Kul'Tiras + Zandalar (+ Nazjatar)
+			["continents"] = {876, 875, 1355},  --> Kul'Tiras + Zandalar (+ Nazjatar [Zone])
 			["unlockQuest"] = MRBP_COMMAND_TABLE_UNLOCK_QUESTS[Enum.GarrisonType.Type_8_0][factionGroup],
+			["bountyBoard"] = {
+				["title"] = BOUNTY_BOARD_LOCKED_TITLE,
+				["noBountiesMessage"] = BOUNTY_BOARD_NO_BOUNTIES_DAYS_1,
+				["bounties"] = C_QuestLog.GetBountiesForMapID(875),  --> or any child zone from "continents" seems to work as well.
+				["areBountiesUnlocked"] = MapUtil.MapHasUnlockedBounties(875),
+			},
 		},
 		-----[[ Shadowlands ]]-----
 		[Enum.GarrisonType.Type_9_0] = {
@@ -339,6 +386,12 @@ function MRBP:LoadData()
 			["expansionInfo"] = util:GetExpansionInfo(8),
 			["continents"] = {1550},  --> Shadowlands
 			["unlockQuest"] = MRBP_COMMAND_TABLE_UNLOCK_QUESTS[Enum.GarrisonType.Type_9_0][covenantID],
+			["bountyBoard"] = {
+				["title"] = CALLINGS_QUESTS,
+				["noBountiesMessage"] = BOUNTY_BOARD_NO_CALLINGS_DAYS_1,
+				["bounties"] = {},  --> Shadowlands callings; later added via the "COVENANT_CALLINGS_UPDATED" event handler.
+				["areBountiesUnlocked"] = C_CovenantCallings.AreCallingsUnlocked(),
+			},
 		},
 	};
 end
@@ -464,6 +517,62 @@ local function BuildMenuEntryLabelDesc(garrTypeID, isDisabled)
 			tooltipText = tooltipText.."|n|n"..DIM_RED_FONT_COLOR:WrapTextInColorCode(garrInfo.msg.unlockReason);
 		else
 			tooltipText = tooltipText.."|n|n"..DIM_RED_FONT_COLOR:WrapTextInColorCode(string.format(UNLOCKS_AT_LEVEL, garrInfo.expansionInfo.maxLevel));
+		end
+	end
+
+	--[[ Bounty board infos ]]--
+	if ( not isDisabled and garrTypeID ~= Enum.GarrisonType.Type_6_0 ) then
+		local bountyBoard = garrInfo.bountyBoard;
+
+		if ( bountyBoard.areBountiesUnlocked ) then
+			tooltipText = tooltipText.."|n|n"..bountyBoard.title;
+			-- print(garrInfo.title, "- bounties:", #bountyBoard.bounties);
+			if ( garrTypeID == Enum.GarrisonType.Type_9_0 ) then
+				CovenantCalling_CheckCallings();
+				--> REF.: <FrameXML/ObjectAPI/CovenantCalling.lua>
+			end
+			for index, bountyData in ipairs(bountyBoard.bounties) do
+				if bountyData then
+					local questName = QuestUtils_GetQuestName(bountyData.questID);
+					local icon = util:CreateInlineIcon(bountyData.icon);
+					if ( garrTypeID == Enum.GarrisonType.Type_9_0 ) then
+						icon = util:CreateInlineIcon(bountyData.icon, 16, nil, nil, true);
+						-- C_QuestLog.GetBountiesForMapID(875)
+					end
+					local bountyString = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode("%s %s"):format(icon, questName);
+					tooltipText = tooltipText.."|n"..bountyString;
+					if bountyData.turninRequirementText then			--> TODO - Needed ???
+						--> REF.: <FrameXML//WorldMapBountyBoard.lua>
+						local reqString = RED_FONT_COLOR:WrapTextInColorCode(bountyData.turninRequirementText);
+						tooltipText = tooltipText.."|n"..reqString;
+					end
+				else
+					tooltipText = tooltipText.."|n"..bountyBoard.noBountiesMessage;
+				end
+			end
+		end
+		-- local color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR; -- NORMAL_FONT_COLOR
+ 		-- local formattedTime, color, secondsRemaining = WorldMap_GetQuestTimeForTooltip(questID);
+		
+		--[[ World map threat infos ]]--
+		local activeThreats = util:GetActiveWorldMapThreads();
+		if activeThreats then
+			for threatExpansionLevel, threatData in pairs(activeThreats) do
+				-- Add the infos to the corresponding expansions only
+				if ( threatExpansionLevel == garrInfo.expansionInfo.expansionLevel ) then
+					-- Show the header only once per expansion
+					local EXPANSION_LEVEL_BFA = 7;
+					if ( threatExpansionLevel == EXPANSION_LEVEL_BFA ) then
+						tooltipText = tooltipText.."|n|n"..WORLD_MAP_THREATS;
+					else
+						tooltipText = tooltipText.."|n|n"..garrInfo.expansionInfo.name;
+					end
+					for i, threatInfo in ipairs(threatData) do
+						local questID, questName, zoneName = unpack(threatInfo); 
+						tooltipText = tooltipText.."|n"..HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(questName);
+					end
+				end
+			end
 		end
 	end
 	
@@ -743,7 +852,6 @@ function MRBP:RegisterSlashCommands()
 					_log.level = _log.NOTSET;
 				end
 				ns.settings.showChatNotifications = not enabled;
-				ns.cprint("enabled:", enabled, ns.settings.showChatNotifications);
 			
 			elseif (msg == 'config') then
 				-- Works only then correctly, when you call this twice (!)

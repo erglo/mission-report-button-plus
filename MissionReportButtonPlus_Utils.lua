@@ -152,7 +152,6 @@ function util:CreateInlineIcon(atlasNameOrTexID, size, xOffset, yOffset)
 		return CreateAtlasMarkup(atlasNameOrTexID, size, size, xOffset, yOffset);  --> keep original color
 	end
 end
--- print(util:CreateInlineIcon(136244), "Test");
 
 ----- Data handler -------------------------------------------------------------
 
@@ -201,7 +200,6 @@ function util:GetExpansionInfo(expansionLevel)
 	
 	return expansionInfo;
 end
--- Test_GetExpansionInfo = util.GetExpansionInfo;
 
 function util:GetInProgressMissionCount(garrTypeID)
 	--
@@ -244,6 +242,64 @@ end
 ----- WorldMap and Positioning -------------------------------------------------
 
 -- util.map = {};
+
+function util:GetContinentZones(mapID, allDescendants)
+-- function GetContinentZones(mapID, allDescendants)
+	--
+	-- Retrieve the zones of given continent's map ID.
+	--
+	-- Returns: table
+	--
+	-- REF.: <FrameXML/Blizzard_APIDocumentation/MapDocumentation.lua>
+	--
+	local infos = {};
+	local ALL_DESCENDANTS = allDescendants or false;
+
+	for i, mapInfo in pairs(C_Map.GetMapChildrenInfo(mapID, Enum.UIMapType.Zone, ALL_DESCENDANTS)) do
+		tinsert(infos, mapInfo);
+		-- print(i, mapInfo.mapID, mapInfo.name, "-->", mapInfo.mapType);
+	end
+
+	return infos;
+end
+
+function util:GetActiveWorldMapThreads()
+	--
+	-- Find active threats in the world, if active for current player; eg. the
+	-- covenant attacks in The Maw or the N'Zoth's attacks in Battle for Azeroth.
+	--
+	-- Returns: table
+	--
+	-- REF.: <FrameXML/Blizzard_WorldMap/Blizzard_WorldMapTemplates.lua>
+	-- REF.: <FrameXML/Blizzard_APIDocumentation/QuestTaskInfoDocumentation.lua>
+	-- REF.: <https://wowpedia.fandom.com/wiki/UI_escape_sequences>
+	--
+	if C_QuestLog.HasActiveThreats() then
+		local threatQuests = C_TaskQuest.GetThreatQuests();
+		local activeThreats = {};
+		for i, questID in ipairs(threatQuests) do
+			if C_TaskQuest.IsActive(questID) then
+				local questTitle, factionID = C_TaskQuest.GetQuestInfoByQuestID(questID);
+				local typeAtlas =  QuestUtil.GetThreatPOIIcon(questID);
+				-- local questLink = string.format("%s|Hquest:%d:-1|h[%s]|h|r", NORMAL_FONT_COLOR_CODE, questID, questTitle);
+				-- local questName = util:CreateInlineIcon(typeAtlas)..questLink;
+				local questName = util:CreateInlineIcon(typeAtlas)..questTitle;
+				local mapID = C_TaskQuest.GetQuestZoneID(questID);
+				local mapInfo = C_Map.GetMapInfo(mapID);
+				local questExpansionLevel = GetQuestExpansion(questID);
+				_log:debug("Threat:", questID, questTitle, ">", mapID, mapInfo.name, "expLvl:", questExpansionLevel);
+				if ( not activeThreats[questExpansionLevel] ) then
+					-- Add table values per expansion IDs
+					activeThreats[questExpansionLevel] = {};
+				end
+				tinsert(activeThreats[questExpansionLevel], {questID, questName, mapInfo.name});
+		   end
+		end		-- TODO - Turn infos into hyperlinks with icons; try factionID.
+		return activeThreats;
+	 end
+	-- local posX, posY = C_TaskQuest.GetQuestLocation(questID, mapID);
+	return false;
+end
 
 ----- Specials -----------------------------------------------------------------
 
