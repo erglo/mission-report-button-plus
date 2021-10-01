@@ -46,6 +46,8 @@ ns.defaultSettings = {  --> default + fallback settings
 	["showMissionTypeIcons"] = true,
 	-- ["preferGlobalSettings"] = true,						--> TODO
 	["activeMenuEntries"] = {"5", "6", "7", "8", "9"},
+	["showWorldmapBounties"] = true,
+	["showWorldmapThreats"] = true,
 };
 
 local function LoadSettings()
@@ -257,7 +259,7 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 		--> label, tag
 		{L.CFG_ADDONINFOS_VERSION, "Version"},
 		{L.CFG_ADDONINFOS_AUTHOR, "Author"},
-		{L.CFG_ADDONINFOS_EMAIL, "X-Project-Email"},
+		{L.CFG_ADDONINFOS_EMAIL, "X-Email"},
 		{L.CFG_ADDONINFOS_HOMEPAGE, "X-Project-Homepage"},
 		{L.CFG_ADDONINFOS_LICENSE, "X-License"},
 	};
@@ -436,6 +438,32 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 	entryTooltipInProgressCB.SetValue = CheckButton_SetValue;
 	BlizzardOptionsPanel_RegisterControl(entryTooltipInProgressCB, self);
 	BlizzardOptionsPanel_SetupDependentControl(entryTooltipCB, entryTooltipInProgressCB);
+
+	local entryTooltipBountiesCB = CreateFrame("CheckButton", self:GetName().."EntryTooltipBountiesCB", self, "InterfaceOptionsCheckButtonTemplate");
+	entryTooltipBountiesCB:SetPoint("TOPLEFT", entryTooltipInProgressCB, "BOTTOMLEFT", 0, -8);
+	entryTooltipBountiesCB.type = CONTROLTYPE_CHECKBOX;
+	entryTooltipBountiesCB.text = _G[entryTooltipBountiesCB:GetName().."Text"];
+	entryTooltipBountiesCB.text:SetText("Show active bounties");
+	entryTooltipBountiesCB.tooltipText = "Aactive bounties tooltip...";  	-- TODO - L10n
+	entryTooltipBountiesCB.varname = "showWorldmapBounties";
+	entryTooltipBountiesCB.value = ns.settings[entryTooltipBountiesCB.varname];
+	entryTooltipBountiesCB.GetValue = CheckButton_GetValue;
+	entryTooltipBountiesCB.SetValue = CheckButton_SetValue;
+	BlizzardOptionsPanel_RegisterControl(entryTooltipBountiesCB, self);
+	BlizzardOptionsPanel_SetupDependentControl(entryTooltipCB, entryTooltipBountiesCB);
+	
+	local entryTooltipThreatsCB = CreateFrame("CheckButton", self:GetName().."EntryTooltipThreatsCB", self, "InterfaceOptionsCheckButtonTemplate");
+	entryTooltipThreatsCB:SetPoint("TOPLEFT", entryTooltipBountiesCB, "BOTTOMLEFT", 0, -8);
+	entryTooltipThreatsCB.type = CONTROLTYPE_CHECKBOX;
+	entryTooltipThreatsCB.text = _G[entryTooltipThreatsCB:GetName().."Text"];
+	entryTooltipThreatsCB.text:SetText("Show active threats");
+	entryTooltipThreatsCB.tooltipText = "Active threats tooltip...";  		-- TODO - L10n
+	entryTooltipThreatsCB.varname = "showWorldmapThreats";
+	entryTooltipThreatsCB.value = ns.settings[entryTooltipThreatsCB.varname];
+	entryTooltipThreatsCB.GetValue = CheckButton_GetValue;
+	entryTooltipThreatsCB.SetValue = CheckButton_SetValue;
+	BlizzardOptionsPanel_RegisterControl(entryTooltipThreatsCB, self);
+	BlizzardOptionsPanel_SetupDependentControl(entryTooltipCB, entryTooltipThreatsCB);
 	
 	--[[ Meny entries selection dropdown ]]--
 	

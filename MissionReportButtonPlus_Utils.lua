@@ -263,7 +263,7 @@ function util:GetContinentZones(mapID, allDescendants)
 	return infos;
 end
 
-function util:GetActiveWorldMapThreads()
+function util:GetActiveWorldMapThreats()
 	--
 	-- Find active threats in the world, if active for current player; eg. the
 	-- covenant attacks in The Maw or the N'Zoth's attacks in Battle for Azeroth.

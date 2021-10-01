@@ -492,7 +492,7 @@ local function BuildMenuEntryLabelDesc(garrTypeID, isDisabled)
 		end
 	end
 	
-	--[[ Set the menu entry's tooltip text ]]--  								-- TODO - add numAvailable to mission infos
+	--[[ In-progress mission infos ]]--  								-- TODO - add numAvailable to mission infos
 	local tooltipText = isDisabled and DISABLED_FONT_COLOR:WrapTextInColorCode(garrInfo.description) or garrInfo.description;
 	if ( ns.settings.showMissionCountInTooltip and not isDisabled ) then
 		-- Add category title for missions
@@ -518,13 +518,16 @@ local function BuildMenuEntryLabelDesc(garrTypeID, isDisabled)
 		else
 			tooltipText = tooltipText.."|n|n"..DIM_RED_FONT_COLOR:WrapTextInColorCode(string.format(UNLOCKS_AT_LEVEL, garrInfo.expansionInfo.maxLevel));
 		end
+
+		return labelText, tooltipText;  --> Stop here; don't process the rest below.
 	end
 
 	--[[ Bounty board infos ]]--
-	if ( not isDisabled and garrTypeID ~= Enum.GarrisonType.Type_6_0 ) then
+	if ( garrTypeID ~= Enum.GarrisonType.Type_6_0 ) then
+		-- Only available since Legion (WoW 7.x)
 		local bountyBoard = garrInfo.bountyBoard;
 
-		if ( bountyBoard.areBountiesUnlocked ) then
+		if ( bountyBoard.areBountiesUnlocked and ns.settings.showWorldmapBounties ) then
 			tooltipText = tooltipText.."|n|n"..bountyBoard.title;
 			-- print(garrInfo.title, "- bounties:", #bountyBoard.bounties);
 			if ( garrTypeID == Enum.GarrisonType.Type_9_0 ) then
@@ -553,30 +556,30 @@ local function BuildMenuEntryLabelDesc(garrTypeID, isDisabled)
 		end
 		-- local color = finished and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR; -- NORMAL_FONT_COLOR
  		-- local formattedTime, color, secondsRemaining = WorldMap_GetQuestTimeForTooltip(questID);
-		
-		--[[ World map threat infos ]]--
-		local activeThreats = util:GetActiveWorldMapThreads();
-		if activeThreats then
-			for threatExpansionLevel, threatData in pairs(activeThreats) do
-				-- Add the infos to the corresponding expansions only
-				if ( threatExpansionLevel == garrInfo.expansionInfo.expansionLevel ) then
-					-- Show the header only once per expansion
-					local EXPANSION_LEVEL_BFA = 7;
-					if ( threatExpansionLevel == EXPANSION_LEVEL_BFA ) then
-						tooltipText = tooltipText.."|n|n"..WORLD_MAP_THREATS;
-					else
-						tooltipText = tooltipText.."|n|n"..garrInfo.expansionInfo.name;
-					end
-					for i, threatInfo in ipairs(threatData) do
-						local questID, questName, zoneName = unpack(threatInfo); 
-						tooltipText = tooltipText.."|n"..HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(questName);
-					end
+	end
+
+	--[[ World map threat infos ]]--
+	local activeThreats = util:GetActiveWorldMapThreats();
+	if ( activeThreats and ns.settings.showWorldmapThreats ) then
+		for threatExpansionLevel, threatData in pairs(activeThreats) do
+			-- Add the infos to the corresponding expansions only
+			if ( threatExpansionLevel == garrInfo.expansionInfo.expansionLevel ) then
+				-- Show the header only once per expansion
+				local EXPANSION_LEVEL_BFA = 7;
+				if ( threatExpansionLevel == EXPANSION_LEVEL_BFA ) then
+					tooltipText = tooltipText.."|n|n"..WORLD_MAP_THREATS;
+				else
+					tooltipText = tooltipText.."|n|n"..garrInfo.expansionInfo.name;
+				end
+				for i, threatInfo in ipairs(threatData) do
+					local questID, questName, zoneName = unpack(threatInfo); 
+					tooltipText = tooltipText.."|n"..HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(questName);
 				end
 			end
 		end
 	end
 	
-	return labelText, tooltipText; 
+	return labelText, tooltipText;
 end
 
 function MRBP:GarrisonLandingPageDropDown_OnLoad()
