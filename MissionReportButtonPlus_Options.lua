@@ -48,6 +48,7 @@ ns.defaultSettings = {  --> default + fallback settings
 	["activeMenuEntries"] = {"5", "6", "7", "8", "9"},
 	["showWorldmapBounties"] = true,
 	["showWorldmapThreats"] = true,
+	-- ["hideMinimapButton"] = false,  --> GarrisonLandingPageMinimapButton -- TODO
 };
 
 local function LoadSettings()
@@ -259,7 +260,7 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 		--> label, tag
 		{L.CFG_ADDONINFOS_VERSION, "Version"},
 		{L.CFG_ADDONINFOS_AUTHOR, "Author"},
-		{L.CFG_ADDONINFOS_EMAIL, "X-Email"},
+		-- {L.CFG_ADDONINFOS_EMAIL, "X-Email"},
 		{L.CFG_ADDONINFOS_HOMEPAGE, "X-Project-Homepage"},
 		{L.CFG_ADDONINFOS_LICENSE, "X-License"},
 	};
@@ -278,8 +279,15 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 		metaValue:SetPoint("LEFT", metaLabel, "RIGHT", 4, 0);
 		metaValue:SetWidth(panelContainerWidth/1.5);
 		metaValue:SetJustifyH("LEFT");
-		metaValue:SetText( GetAddOnMetadata(AddonID, infoLabel) );
-
+		if ( infoLabel == "Author" ) then
+			-- Append author's email address behind name
+			local authorName, authorMail = GetAddOnMetadata(AddonID, infoLabel), GetAddOnMetadata(AddonID, "X-Email");
+			metaValue:SetText( string.format("%s <%s>", authorName, authorMail) );
+		else
+			metaValue:SetText( GetAddOnMetadata(AddonID, infoLabel) );
+		end
+		-- TODO - Make email and website links clickable.
+		
 		parentFrame = metaLabel;
 	end
 	
@@ -327,7 +335,7 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 	BlizzardOptionsPanel_RegisterControl(addonNameCB, self);
 	
 	local chatMsgCB = CreateFrame("CheckButton", self:GetName().."ChatMsgCB", self, "InterfaceOptionsCheckButtonTemplate");
-	chatMsgCB:SetPoint("TOPLEFT", addonNameCB, "BOTTOMLEFT", 0, -8);
+	chatMsgCB:SetPoint("TOPLEFT", addonNameCB.text, "TOPLEFT", panelContainerWidth/2, 0);
 	chatMsgCB.type = CONTROLTYPE_CHECKBOX;
 	chatMsgCB.text = _G[chatMsgCB:GetName().."Text"];
 	chatMsgCB.text:SetText(L.CFG_CHAT_NOTIFY_TEXT);
@@ -343,7 +351,7 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 	--[[ Dropdown menu settings ]]--
 	
 	local dropdownHeading = self:CreateFontString(self:GetName().."DropdownHeading", "ARTWORK", "GameFontNormal");
-	dropdownHeading:SetPoint("TOPLEFT", chatMsgCB, "BOTTOMLEFT", 0, -16);
+	dropdownHeading:SetPoint("TOPLEFT", addonNameCB, "BOTTOMLEFT", 0, -16);
 	dropdownHeading:SetJustifyH("LEFT");
 	dropdownHeading:SetJustifyV("TOP");
 	dropdownHeading:SetText(L.CFG_DDMENU_SEPARATOR_HEADING);
@@ -443,8 +451,8 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 	entryTooltipBountiesCB:SetPoint("TOPLEFT", entryTooltipInProgressCB, "BOTTOMLEFT", 0, -8);
 	entryTooltipBountiesCB.type = CONTROLTYPE_CHECKBOX;
 	entryTooltipBountiesCB.text = _G[entryTooltipBountiesCB:GetName().."Text"];
-	entryTooltipBountiesCB.text:SetText("Show active bounties");
-	entryTooltipBountiesCB.tooltipText = "Aactive bounties tooltip...";  	-- TODO - L10n
+	entryTooltipBountiesCB.text:SetText(L.CFG_DDMENU_ENTRYTOOLTIP_BOUNTIES_TEXT);
+	entryTooltipBountiesCB.tooltipText = L.CFG_DDMENU_ENTRYTOOLTIP_BOUNTIES_TOOLTIP;
 	entryTooltipBountiesCB.varname = "showWorldmapBounties";
 	entryTooltipBountiesCB.value = ns.settings[entryTooltipBountiesCB.varname];
 	entryTooltipBountiesCB.GetValue = CheckButton_GetValue;
@@ -456,8 +464,8 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 	entryTooltipThreatsCB:SetPoint("TOPLEFT", entryTooltipBountiesCB, "BOTTOMLEFT", 0, -8);
 	entryTooltipThreatsCB.type = CONTROLTYPE_CHECKBOX;
 	entryTooltipThreatsCB.text = _G[entryTooltipThreatsCB:GetName().."Text"];
-	entryTooltipThreatsCB.text:SetText("Show active threats");
-	entryTooltipThreatsCB.tooltipText = "Active threats tooltip...";  		-- TODO - L10n
+	entryTooltipThreatsCB.text:SetText(L.CFG_DDMENU_ENTRYTOOLTIP_THREATS_TEXT);
+	entryTooltipThreatsCB.tooltipText = L.CFG_DDMENU_ENTRYTOOLTIP_THREATS_TOOLTIP;
 	entryTooltipThreatsCB.varname = "showWorldmapThreats";
 	entryTooltipThreatsCB.value = ns.settings[entryTooltipThreatsCB.varname];
 	entryTooltipThreatsCB.GetValue = CheckButton_GetValue;
@@ -565,28 +573,28 @@ function MRBP_InterfaceOptionsPanel:Initialize()
 				UIDropDownMenu_AddButton(info);
 			end
 		end
-		UIDropDownMenu_AddSeparator()
-		-- TODO - Add un-/checking options
-		info.text = CHECK_ALL;  --> WoW global string
-		info.value = "all";
-		info.notCheckable = 1;
-		info.keepShownOnClick = 1;
-		info.justifyH = "CENTER";
-		info.colorCode = NORMAL_FONT_COLOR:GenerateHexColorMarkup();
-		info.func = function(self)
-			self.checked = nil;
-			-- MenuEntriesSelectionDropDown_OnClick(self)
-		end;
-		UIDropDownMenu_AddButton(info);
+		-- UIDropDownMenu_AddSeparator()
+		-- -- TODO - Add un-/checking options
+		-- info.text = CHECK_ALL;  --> WoW global string
+		-- info.value = "all";
+		-- info.notCheckable = 1;
+		-- info.keepShownOnClick = 1;
+		-- info.justifyH = "CENTER";
+		-- info.colorCode = NORMAL_FONT_COLOR:GenerateHexColorMarkup();
+		-- info.func = function(self)
+		-- 	self.checked = nil;
+		-- 	-- MenuEntriesSelectionDropDown_OnClick(self)
+		-- end;
+		-- UIDropDownMenu_AddButton(info);
 		
-		info.text = UNCHECK_ALL;  --> WoW global string
-		info.func = nil;
-		info.value = "none";
-		info.notCheckable = 1;
-		info.keepShownOnClick = 1;
-		info.justifyH = "CENTER";
-		info.colorCode = NORMAL_FONT_COLOR:GenerateHexColorMarkup();
-		UIDropDownMenu_AddButton(info);
+		-- info.text = UNCHECK_ALL;  --> WoW global string
+		-- info.func = nil;
+		-- info.value = "none";
+		-- info.notCheckable = 1;
+		-- info.keepShownOnClick = 1;
+		-- info.justifyH = "CENTER";
+		-- info.colorCode = NORMAL_FONT_COLOR:GenerateHexColorMarkup();
+		-- UIDropDownMenu_AddButton(info);
 	end
 	
 	UIDropDownMenu_SetWidth(menuEntriesDD, panelContainerWidth/3);

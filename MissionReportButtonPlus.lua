@@ -126,7 +126,7 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 			local missionIcon = missionInfo.typeTextureKit and missionInfo.typeTextureKit.."-Map" or missionInfo.typeAtlas;
 			local missionName = util:CreateInlineIcon(missionIcon).." "..missionLink;
 			_log:debug(event, "followerTypeID:", followerTypeID, "missionID:", missionID, missionInfo.name);
-			-- TODO - Count and show number of other finished missions ???
+			-- TODO - Count and show number of twinks' finished missions ???
 			-- TODO - Remove from MRBP_GlobalMissions
 			util:cprintEvent(garrInfo.expansionInfo.name, eventMsg, missionName, nil, true);
 		
@@ -191,12 +191,13 @@ MRBP:SetScript("OnEvent", function(self, event, ...)
 				end
 			end
 			if isInitialLogin then
-				local loaded, finished = IsAddOnLoaded("Blizzard_Calendar");
+				local addonName = "Blizzard_Calendar";
+				local loaded, finished = IsAddOnLoaded(addonName);
 				if not ( loaded ) then
-					_log:debug("Loading Blizzard_Calendar");
-					local isLoaded, failedReason = LoadAddOn("Blizzard_Calendar");
+					_log:debug("Loading "..addonName);
+					local isLoaded, failedReason = LoadAddOn(addonName);
 					if failedReason then
-						_log:debug(string.format(ADDON_LOAD_FAILED, "Blizzard_Calendar", _G["ADDON_"..failedReason]));
+						_log:debug(string.format(ADDON_LOAD_FAILED, addonName, _G["ADDON_"..failedReason]));
 					end
 				end
 				C_Timer.After(5, printDayEvent);  -- FIXME - Still not working on first account-login :(
@@ -529,7 +530,7 @@ local function BuildMenuEntryLabelDesc(garrTypeID, isDisabled)
 
 		if ( bountyBoard.areBountiesUnlocked and ns.settings.showWorldmapBounties ) then
 			tooltipText = tooltipText.."|n|n"..bountyBoard.title;
-			-- print(garrInfo.title, "- bounties:", #bountyBoard.bounties);
+			_log:debug(garrInfo.title, "- bounties:", #bountyBoard.bounties);
 			if ( garrTypeID == Enum.GarrisonType.Type_9_0 ) then
 				CovenantCalling_CheckCallings();
 				--> REF.: <FrameXML/ObjectAPI/CovenantCalling.lua>
@@ -752,7 +753,7 @@ function MRBP_OnEnter(self)
 	GameTooltip:AddLine(self.description, nil, nil, nil, true);
 	local tooltipAddonText = L.TOOLTIP_CLICKTEXT_MINIMAPBUTTON;
 	if ns.settings.showAddonNameInTooltip then
-		tooltipAddonText = GRAY_FONT_COLOR:WrapTextInColorCode(ns.AddonTitleShort).." "..tooltipAddonText;
+		tooltipAddonText = GRAY_FONT_COLOR:WrapTextInColorCode(ns.AddonTitleShort..ns.AddonTitleSeparator).." "..tooltipAddonText;
 	end
 	local currentDateTime = C_DateAndTime.GetCurrentCalendarTime();
 	if ( currentDateTime.month == 12 ) then
@@ -861,14 +862,22 @@ function MRBP:RegisterSlashCommands()
 				InterfaceOptionsFrame_OpenToCategory(MRBP_InterfaceOptionsPanel);
 				InterfaceOptionsFrame_OpenToCategory(MRBP_InterfaceOptionsPanel);
 			
+			-- TODO - Availability is still hidden from user; need more test runs. (experimental)
 			elseif (msg == 'show') then
-				ns.cprint("IsShown:", GarrisonLandingPageMinimapButton:IsShown());
-				ns.cprint("IsVisible:", GarrisonLandingPageMinimapButton:IsVisible());
+				_log:debug("IsShown:", GarrisonLandingPageMinimapButton:IsShown());
+				_log:debug("IsVisible:", GarrisonLandingPageMinimapButton:IsVisible());
 				if ( not GarrisonLandingPageMinimapButton:IsShown() ) then
 					GarrisonLandingPageMinimapButton:Show()
 					-- if ( C_Garrison.GetLandingPageGarrisonType() == Enum.GarrisonType.Type_9_0 ) then
 					GarrisonLandingPageMinimapButton_UpdateIcon(GarrisonLandingPageMinimapButton);
 					-- end
+				end
+
+			elseif (msg == 'hide') then
+				_log:debug("IsShown:", GarrisonLandingPageMinimapButton:IsShown());
+				_log:debug("IsVisible:", GarrisonLandingPageMinimapButton:IsVisible());
+				if GarrisonLandingPageMinimapButton:IsShown() then
+					GarrisonLandingPageMinimapButton:Hide();
 				end
 			
 			-- Tests

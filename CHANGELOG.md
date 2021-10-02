@@ -1,10 +1,27 @@
 Changelog
 =========
 
+v2021.10.02 (beta)
+-------------------
+- *Initial `beta` release with __Git__ on [CurseForge.com][^cf] and [GitHub.com][^gh].*
+<!--- Hyperlinks --->
+[^cf]: <https://www.curseforge.com/wow/addons/mission-report-button-plus>
+[^gh]: <https://github.com/erglo/mission-report-button-plus>
+
+v2021.09.30 (beta)
+-------------------
+- *Added* both to the UI options.
+- *Added* worldmap threat infos to menu item's tooltip.
+- *Added* bounty board infos to menu item's tooltip.
+
+v2021.09.20 (beta)
+-------------------
+- *Added* a chat notification for the worldquest calendar event.
+
 v2021.09.15 (beta)
 -------------------
-- *Changed* projekt status to `beta`. __Testers wanted!__
-- *Added* version control management with Git, including meta files.
+- *Changed* project status to `beta`. __Testers wanted!__
+- *Added* version control management with __Git__, including meta files.
 - *Added* calendar world quest event week watcher.
 
 v2021.09.10 (alpha)
@@ -65,7 +82,7 @@ v2021.03.31 (alpha)
 
 v2021.03.26 (alpha)
 -------------------
-- *Initial public release* of alpha version.
+- *Initial public release* of `alpha` version.
 - *Added* copyright infos and long description.
 - *Added* locale files (enUS + deDE).
 - *Added* add-on page at 
