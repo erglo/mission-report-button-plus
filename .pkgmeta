@@ -1,9 +1,9 @@
-package-as: MissionReportButtonPlus_v2021.09.15_beta1
+package-as: MissionReportButtonPlus_v2021.10.02-beta1
 
 enable-nolib-creation: no
 
 ignore:
-    - MRBP_long-description.md
+    - README.md
 
 manual-changelog:
     filename: CHANGELOG.md
