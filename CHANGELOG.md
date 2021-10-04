@@ -1,12 +1,13 @@
 Changelog
 =========
 
+v2021.10.04 (beta)
+-------------------
+- *Updated* the README and meta files to be more compatible with both code hosting platforms.
+
 v2021.10.02 (beta)
 -------------------
-- *Initial `beta` release with __Git__ on [CurseForge.com][^cf] and [GitHub.com][^gh].*
-<!--- Hyperlinks --->
-[^cf]: <https://www.curseforge.com/wow/addons/mission-report-button-plus>
-[^gh]: <https://github.com/erglo/mission-report-button-plus>
+- *Initial `beta` release with __Git__ on [CurseForge.com](https://www.curseforge.com/wow/addons/mission-report-button-plus) and [GitHub.com](https://github.com/erglo/mission-report-button-plus).*
 
 v2021.09.30 (beta)
 -------------------
@@ -20,7 +21,7 @@ v2021.09.20 (beta)
 
 v2021.09.15 (beta)
 -------------------
-- *Changed* project status to `beta`. __Testers wanted!__
+- *Changed* project status to `beta`. __Testers welcome!__
 - *Added* version control management with __Git__, including meta files.
 - *Added* calendar world quest event week watcher.
 
@@ -86,7 +87,7 @@ v2021.03.26 (alpha)
 - *Added* copyright infos and long description.
 - *Added* locale files (enUS + deDE).
 - *Added* add-on page at 
-  [curseforge.com](https://www.curseforge.com/wow/addons/mission-report-button-plus).
+  [CurseForge.com](https://www.curseforge.com/wow/addons/mission-report-button-plus).
 
 v2021.03.19 (alpha)
 -------------------
