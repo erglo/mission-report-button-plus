@@ -1,8 +1,8 @@
 Mission Report Button Plus
 --------------------------
 
-Adds a right-click menu to the mission report button on the minimap for selecting reports from previous expansions. 
-*(See full feature list [below](#features))*  
+Adds a right-click menu to the mission report button on the minimap for selecting reports from previous expansions.  
+*(See full feature list below)*  
 
 ![Button tooltip and right-click menu with expansion names](https://media.forgecdn.net/attachments/thumbnails/364/415/310/172/mbrp_tooltip-dropdown.jpg "Right-click on the Kyrian mission report button on the minimap opens the menu.") 
 ![The right-click menu with in-progess mission infos](https://media.forgecdn.net/attachments/thumbnails/364/416/310/172/mbrp_dropdown_bfa-missioncount.jpg "Mouse-over a menu entry shows details about running missions.")  
@@ -22,7 +22,7 @@ It is still possible to access mission reports from previous extensions, but the
 
 ---
 
-## Features {#features}  
+## Features  
 
 + adds a right-click menu to the minimap button,
 + a click on an menu entry opens the (read-only) Mission Report Frame (aka. the `GarrisonLandingPage` frame) of the corresponding expansion,
